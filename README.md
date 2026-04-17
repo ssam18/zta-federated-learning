@@ -307,4 +307,4 @@ If you use this code or data in your research, please cite:
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License, see [LICENSE](LICENSE) for details.
