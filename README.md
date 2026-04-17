@@ -1,7 +1,7 @@
 # Zero-Trust Federated Learning for IIoT Intrusion Detection
 
 A privacy-preserving, Byzantine-resilient federated learning framework for
-Industrial IoT (IIoT) intrusion detection.  The system integrates hardware-rooted
+Industrial IoT (IIoT) intrusion detection. The system integrates hardware-rooted
 device attestation, SHAP-weighted robust aggregation, and on-device adversarial
 training into a three-tier edge–fog–cloud architecture.
 
@@ -15,9 +15,9 @@ industrial sites.  Federated learning allows devices to collaboratively train a
 shared intrusion-detection model without sharing raw traffic data.  However,
 standard FL is vulnerable to:
 
-- **Byzantine poisoning** — compromised devices injecting malicious model updates
-- **Adversarial evasion** — crafted inputs that fool the trained classifier
-- **Sybil attacks** — unauthenticated agents impersonating legitimate devices
+- **Byzantine poisoning** compromised devices injecting malicious model updates
+- **Adversarial evasion** crafted inputs that fool the trained classifier
+- **Sybil attacks** unauthenticated agents impersonating legitimate devices
 
 This project addresses all three threats through a unified zero-trust design.
 
@@ -171,7 +171,7 @@ All three are preprocessed to a common 40-feature representation via PCA.
 
 ## Reproducing Results
 
-### Step 1 — Run all experiments
+### Step 1 - Run all experiments
 
 ```bash
 source .venv/bin/activate
@@ -201,7 +201,7 @@ python3 scripts/run_experiments.py \
 | `--quick` | off | Smoke-test mode: 5 agents, 10 rounds, 1 seed, Edge only |
 | `--output` | `results/experiment_results.json` | Output path for structured results |
 
-### Step 2 — Generate publication figures and tables
+### Step 2 - Generate publication figures and tables
 
 ```bash
 python3 scripts/generate_figures.py
@@ -210,7 +210,7 @@ python3 scripts/generate_figures.py
 This reads `results/experiment_results.json` and writes all figures (Figures 3–7)
 and comparison tables (Tables II–VI) to `results/figures/`.
 
-### Step 3 — (Optional) Run individual experiment modules
+### Step 3 - (Optional) Run individual experiment modules
 
 ```bash
 # Baseline method comparison
@@ -226,7 +226,7 @@ python3 experiments/adversarial_eval.py --dataset edge --rounds 20 --agents 10
 python3 experiments/ablation_study.py --dataset edge --rounds 30 --agents 10
 ```
 
-### Step 4 — (Optional) Interactive notebook
+### Step 4 - (Optional) Interactive notebook
 
 ```bash
 jupyter lab notebooks/federated_ids_analysis.ipynb
@@ -235,7 +235,7 @@ jupyter lab notebooks/federated_ids_analysis.ipynb
 The notebook covers data loading, model architecture, attestation, adversarial
 training, and FL convergence in a self-contained walkthrough.
 
-### Step 5 — Run unit tests
+### Step 5 - Run unit tests
 
 ```bash
 python3 -m pytest tests/ -v
