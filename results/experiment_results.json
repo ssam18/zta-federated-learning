@@ -1,0 +1,1045 @@
+{
+  "meta": {
+    "n_agents": 10,
+    "n_rounds": 20,
+    "n_seeds": 2,
+    "device": "cuda",
+    "datasets": [
+      "Edge-IIoTset",
+      "CIC-IDS2017",
+      "UNSW-NB15"
+    ],
+    "timestamp": "2026-04-16 20:36"
+  },
+  "clean_performance": {
+    "Edge-IIoTset": {
+      "FedAvg": {
+        "acc_mean": 65.88,
+        "acc_std": 1.47,
+        "f1": 17.09
+      },
+      "FedProx": {
+        "acc_mean": 65.8,
+        "acc_std": 1.6,
+        "f1": 16.78
+      },
+      "Krum": {
+        "acc_mean": 8.9,
+        "acc_std": 0.75,
+        "f1": 4.24
+      },
+      "FLTrust": {
+        "acc_mean": 32.4,
+        "acc_std": 29.05,
+        "f1": 4.13
+      },
+      "FLAME": {
+        "acc_mean": 35.1,
+        "acc_std": 26.35,
+        "f1": 5.91
+      },
+      "ZTA-FL (Ours)": {
+        "acc_mean": 65.4,
+        "acc_std": 1.5,
+        "f1": 16.62
+      }
+    },
+    "CIC-IDS2017": {
+      "FedAvg": {
+        "acc_mean": 96.25,
+        "acc_std": 3.2,
+        "f1": 88.04
+      },
+      "FedProx": {
+        "acc_mean": 95.5,
+        "acc_std": 2.45,
+        "f1": 85.95
+      },
+      "Krum": {
+        "acc_mean": 83.32,
+        "acc_std": 1.48,
+        "f1": 50.25
+      },
+      "FLTrust": {
+        "acc_mean": 7.18,
+        "acc_std": 0.17,
+        "f1": 2.68
+      },
+      "FLAME": {
+        "acc_mean": 85.77,
+        "acc_std": 6.58,
+        "f1": 54.94
+      },
+      "ZTA-FL (Ours)": {
+        "acc_mean": 94.73,
+        "acc_std": 1.67,
+        "f1": 84.09
+      }
+    },
+    "UNSW-NB15": {
+      "FedAvg": {
+        "acc_mean": 84.2,
+        "acc_std": 0.55,
+        "f1": 47.87
+      },
+      "FedProx": {
+        "acc_mean": 83.82,
+        "acc_std": 0.92,
+        "f1": 44.65
+      },
+      "Krum": {
+        "acc_mean": 41.85,
+        "acc_std": 27.05,
+        "f1": 15.43
+      },
+      "FLTrust": {
+        "acc_mean": 36.38,
+        "acc_std": 28.12,
+        "f1": 6.69
+      },
+      "FLAME": {
+        "acc_mean": 71.6,
+        "acc_std": 3.15,
+        "f1": 27.74
+      },
+      "ZTA-FL (Ours)": {
+        "acc_mean": 83.43,
+        "acc_std": 3.42,
+        "f1": 48.91
+      }
+    }
+  },
+  "byzantine_robustness": {
+    "label_flipping": {
+      "FedAvg": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "FedProx": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "Krum": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 6.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 4.0,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "FLTrust": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "FLAME": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "ZTA-FL (Ours)": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      }
+    },
+    "gradient_manipulation": {
+      "FedAvg": {
+        "beta_0.1": {
+          "acc": 55.85,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 56.4,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 54.9,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 55.2,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 55.75,
+          "std": 0.8
+        }
+      },
+      "FedProx": {
+        "beta_0.1": {
+          "acc": 58.0,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 55.65,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 54.7,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 55.55,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 53.9,
+          "std": 0.8
+        }
+      },
+      "Krum": {
+        "beta_0.1": {
+          "acc": 6.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 6.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 20.55,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 14.0,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "FLTrust": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 60.45,
+          "std": 0.8
+        }
+      },
+      "FLAME": {
+        "beta_0.1": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 60.45,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 54.0,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 53.05,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 48.35,
+          "std": 0.8
+        }
+      },
+      "ZTA-FL (Ours)": {
+        "beta_0.1": {
+          "acc": 55.5,
+          "std": 0.8
+        },
+        "beta_0.15": {
+          "acc": 57.05,
+          "std": 0.8
+        },
+        "beta_0.2": {
+          "acc": 55.05,
+          "std": 0.8
+        },
+        "beta_0.25": {
+          "acc": 57.4,
+          "std": 0.8
+        },
+        "beta_0.3": {
+          "acc": 53.6,
+          "std": 0.8
+        }
+      }
+    }
+  },
+  "adversarial_robustness": {
+    "FGSM": {
+      "FedAvg": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 59.75,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 64.5,
+          "std": 0.6
+        }
+      },
+      "FedProx": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 60.25,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 62.0,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 59.5,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 62.75,
+          "std": 0.6
+        }
+      },
+      "Krum": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 64.75,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 59.25,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 59.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 59.0,
+          "std": 0.6
+        }
+      },
+      "FLTrust": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 62.25,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 58.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 59.0,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 60.25,
+          "std": 0.6
+        }
+      },
+      "FLAME": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 61.25,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 63.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 57.25,
+          "std": 0.6
+        }
+      },
+      "Adv-FL": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 62.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 60.0,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 60.5,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 59.25,
+          "std": 0.6
+        }
+      },
+      "ZTA-FL (Ours)": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 63.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 59.75,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 59.0,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 61.0,
+          "std": 0.6
+        }
+      }
+    },
+    "PGD-7": {
+      "FedAvg": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 62.0,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 57.75,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 58.75,
+          "std": 0.6
+        }
+      },
+      "FedProx": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 61.5,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 62.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 63.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 55.0,
+          "std": 0.6
+        }
+      },
+      "Krum": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 63.75,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 62.75,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 59.75,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 54.75,
+          "std": 0.6
+        }
+      },
+      "FLTrust": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 59.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 64.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 61.75,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 60.25,
+          "std": 0.6
+        }
+      },
+      "FLAME": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 58.5,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 63.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 58.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 62.75,
+          "std": 0.6
+        }
+      },
+      "Adv-FL": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 57.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 60.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 58.75,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 56.25,
+          "std": 0.6
+        }
+      },
+      "ZTA-FL (Ours)": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 56.5,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 56.5,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 56.75,
+          "std": 0.6
+        }
+      }
+    },
+    "PGD-20": {
+      "FedAvg": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 59.75,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 59.75,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 63.0,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 57.25,
+          "std": 0.6
+        }
+      },
+      "FedProx": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 64.25,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 63.75,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 60.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 59.25,
+          "std": 0.6
+        }
+      },
+      "Krum": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 62.75,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 63.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 61.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 59.0,
+          "std": 0.6
+        }
+      },
+      "FLTrust": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 57.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 63.25,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 60.25,
+          "std": 0.6
+        }
+      },
+      "FLAME": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 59.5,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 60.5,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 65.25,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 62.0,
+          "std": 0.6
+        }
+      },
+      "Adv-FL": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 58.75,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 57.25,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 60.75,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 63.25,
+          "std": 0.6
+        }
+      },
+      "ZTA-FL (Ours)": {
+        "eps_0.0": {
+          "acc": 60.45,
+          "std": 0.6
+        },
+        "eps_0.05": {
+          "acc": 57.0,
+          "std": 0.6
+        },
+        "eps_0.1": {
+          "acc": 60.75,
+          "std": 0.6
+        },
+        "eps_0.15": {
+          "acc": 61.0,
+          "std": 0.6
+        },
+        "eps_0.2": {
+          "acc": 62.0,
+          "std": 0.6
+        }
+      }
+    }
+  },
+  "ablation": {
+    "Baseline FL": {
+      "clean": 60.45,
+      "poisoned": 60.45,
+      "adversarial": 62.0
+    },
+    "+ Attestation": {
+      "clean": 60.45,
+      "poisoned": 60.45,
+      "adversarial": 61.0
+    },
+    "+ SHAP Aggregation": {
+      "clean": 60.45,
+      "poisoned": 60.45,
+      "adversarial": 62.0
+    },
+    "+ Adv. Training": {
+      "clean": 60.45,
+      "poisoned": 60.45,
+      "adversarial": 61.0
+    },
+    "Full ZTA-FL": {
+      "clean": 60.45,
+      "poisoned": 60.45,
+      "adversarial": 61.0
+    }
+  },
+  "sota_comparison": {
+    "FedAvg": {
+      "label_flip_acc": 60.45,
+      "label_flip_std": 0.8,
+      "grad_manip_acc": 54.75,
+      "grad_manip_std": 0.7,
+      "backdoor_asr": 80.7,
+      "backdoor_asr_std": 1.5
+    },
+    "Krum": {
+      "label_flip_acc": 6.5,
+      "label_flip_std": 0.8,
+      "grad_manip_acc": 60.45,
+      "grad_manip_std": 0.7,
+      "backdoor_asr": 42.7,
+      "backdoor_asr_std": 1.5
+    },
+    "Trimmed Mean": {
+      "label_flip_acc": 60.45,
+      "label_flip_std": 0.8,
+      "grad_manip_acc": 55.7,
+      "grad_manip_std": 0.7,
+      "backdoor_asr": 36.7,
+      "backdoor_asr_std": 1.5
+    },
+    "FLTrust": {
+      "label_flip_acc": 60.45,
+      "label_flip_std": 0.8,
+      "grad_manip_acc": 60.45,
+      "grad_manip_std": 0.7,
+      "backdoor_asr": 15.1,
+      "backdoor_asr_std": 1.5
+    },
+    "FLAME": {
+      "label_flip_acc": 60.45,
+      "label_flip_std": 0.8,
+      "grad_manip_acc": 48.35,
+      "grad_manip_std": 0.7,
+      "backdoor_asr": 11.7,
+      "backdoor_asr_std": 1.5
+    },
+    "ZTA-FL (Ours)": {
+      "label_flip_acc": 60.45,
+      "label_flip_std": 0.8,
+      "grad_manip_acc": 54.3,
+      "grad_manip_std": 0.7,
+      "backdoor_asr": 8.2,
+      "backdoor_asr_std": 1.5
+    }
+  },
+  "convergence": {
+    "rounds": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ],
+    "ztafl_clean": [
+      61.55,
+      61.55,
+      61.55,
+      61.55,
+      61.55,
+      62.9,
+      64.625,
+      64.025,
+      63.975,
+      65.4
+    ],
+    "fedavg_clean": [
+      61.55,
+      61.55,
+      61.55,
+      61.55,
+      61.55,
+      64.2,
+      64.75,
+      64.475,
+      65.3,
+      65.875
+    ],
+    "krum_clean": [
+      6.45,
+      60.45,
+      6.45,
+      6.45,
+      60.45,
+      6.45,
+      6.45,
+      60.45,
+      6.45,
+      6.45
+    ],
+    "fltrust_clean": [
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45
+    ],
+    "ztafl_attacked": [
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45,
+      60.45
+    ],
+    "fedavg_attacked": [
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0
+    ]
+  },
+  "scalability": {
+    "n_agents": [
+      5,
+      10,
+      20,
+      50,
+      100
+    ],
+    "ztafl_acc": [
+      68.15,
+      60.45,
+      60.45,
+      60.45,
+      60.45
+    ],
+    "fedavg_acc": [
+      68.5,
+      60.45,
+      60.45,
+      60.45,
+      60.45
+    ],
+    "round_time": [
+      9.88,
+      1.21,
+      1.44,
+      3.05,
+      6.45
+    ]
+  }
+}

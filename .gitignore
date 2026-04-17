@@ -1,0 +1,30 @@
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Generated figures and logs (reproducible via scripts)
+results/figures/
+results/tables/
+results/run_log.txt
+
+# Claude Code session files
+.claude/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
