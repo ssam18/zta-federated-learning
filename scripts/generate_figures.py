@@ -92,16 +92,25 @@ def load_results(path):
 
 def table_clean_performance(data, outdir, fmt):
     methods = ["FedAvg", "FedProx", "Krum", "FLTrust", "FLAME", "ZTA-FL (Ours)"]
-    datasets = ["Edge-IIoTset", "CIC-IDS2017", "UNSW-NB15"]
     cp = data["clean_performance"]
 
-    # Build cell text: each row = one dataset, each col-pair = acc ± std / F1
+    # Use only the datasets actually present in the JSON (the paper used three;
+    # a single-dataset run for development still produces a valid table).
+    all_datasets = ["Edge-IIoTset", "CIC-IDS2017", "UNSW-NB15"]
+    datasets = [d for d in all_datasets if d in cp]
+    if not datasets:
+        print("[table2] no datasets present in clean_performance; skipping")
+        return
+
     col_labels = ["Method"] + [f"{d}\nAcc ± Std  /  F1" for d in datasets]
     rows = []
     for m in methods:
         row = [m]
         for d in datasets:
-            entry = cp[d][m]
+            entry = cp[d].get(m)
+            if entry is None:
+                row.append("—")
+                continue
             row.append(f"{entry['acc_mean']:.1f}±{entry['acc_std']:.1f} / {entry['f1']:.1f}")
         rows.append(row)
 
