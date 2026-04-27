@@ -23,12 +23,14 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import os
 import sys
 import time
 from typing import Dict, Any, List, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -50,13 +52,17 @@ from src.security.adversarial import (
     fgsm_attack,
     pgd_attack,
 )
+from src.security.backdoor import (
+    poison_partition,
+    compute_backdoor_asr,
+)
 from src.utils.data_loader import (
     load_edge_iiotset,
     load_cic_ids2017,
     load_unsw_nb15,
     non_iid_partition,
 )
-from src.utils.metrics import accuracy, macro_f1
+from src.utils.metrics import accuracy, macro_f1, compute_shap_stability
 
 
 # ---------------------------------------------------------------------------
@@ -416,24 +422,32 @@ def main(args):
     else:
         ds_keys = [args.dataset]
 
-    # Pre-load all datasets
+    # Pre-load all datasets and compute fingerprints
     datasets = {}
+    fingerprints = {}
     for dk in ds_keys:
         cfg = DATASET_CFG[dk]
         print(f"  Loading {cfg['name']} ...")
         X, y = cfg["loader"](cfg["path"], n_features=N_FEATURES)
         datasets[dk] = (X, y, cfg["n_classes"], cfg["name"])
-        print(f"    {X.shape[0]} samples, {X.shape[1]} features, {cfg['n_classes']} classes")
+        fingerprints[cfg["name"]] = compute_data_fingerprint(cfg["path"], X, y)
+        fp = fingerprints[cfg["name"]]
+        print(f"    {fp['n_samples']} samples, {fp['n_features']} features, "
+              f"{cfg['n_classes']} classes  | sha256={fp['csv_sha256'][:16]}…")
 
     seeds = list(range(args.seeds))
     results: Dict[str, Any] = {
         "meta": {
-            "n_agents": args.agents,
-            "n_rounds": args.rounds,
-            "n_seeds":  args.seeds,
-            "device":   device,
-            "datasets": [DATASET_CFG[k]["name"] for k in ds_keys],
-            "timestamp": time.strftime("%Y-%m-%d %H:%M"),
+            "n_agents":           args.agents,
+            "n_rounds":           args.rounds,
+            "n_seeds":            args.seeds,
+            "device":             device,
+            "datasets":           [DATASET_CFG[k]["name"] for k in ds_keys],
+            "timestamp":          time.strftime("%Y-%m-%d %H:%M"),
+            "data_fingerprints":  fingerprints,
+            "torch_version":      torch.__version__,
+            "cuda_available":     torch.cuda.is_available(),
+            "git_commit":         _read_git_commit(),
         },
         "clean_performance":      {},
         "byzantine_robustness":   {"label_flipping": {}, "gradient_manipulation": {}},
@@ -442,6 +456,7 @@ def main(args):
         "sota_comparison":        {},
         "convergence":            {},
         "scalability":            {},
+        "shap_stability":         {},
     }
 
     # -----------------------------------------------------------------
@@ -492,25 +507,35 @@ def main(args):
             results["byzantine_robustness"][result_key][label] = {}
             for beta in betas:
                 print(f"  {result_key} | {label} | β={beta} ...", flush=True)
-                run = run_experiment(
-                    dk, X, y, n_cls, method, byz_rounds, args.agents,
-                    seed=42, device=device,
-                    byzantine_type=attack_type, byz_fraction=beta,
-                    track_history=(method == "ztafl" and beta == 0.2
-                                   and result_key == "label_flipping"),
-                    **kwargs,
-                )
-                val = {"acc": round(run["accuracy"], 2), "std": 0.8}
-                results["byzantine_robustness"][result_key][label][f"beta_{beta}"] = val
-                print(f"    acc={run['accuracy']:.2f}")
+                seed_accs = []
+                histories = []
+                track = (method == "ztafl" and beta == 0.2
+                         and result_key == "label_flipping") or \
+                        (method == "fedavg" and beta == 0.2
+                         and result_key == "label_flipping")
+                for seed in seeds:
+                    run = run_experiment(
+                        dk, X, y, n_cls, method, byz_rounds, args.agents,
+                        seed=seed, device=device,
+                        byzantine_type=attack_type, byz_fraction=beta,
+                        track_history=track,
+                        **kwargs,
+                    )
+                    seed_accs.append(run["accuracy"])
+                    if run["history"]:
+                        histories.append(run["history"])
 
-                # Attacked convergence for figure 5
-                if method == "ztafl" and beta == 0.2 and result_key == "label_flipping":
-                    if run["history"]:
-                        store_convergence(results, "ztafl", [run["history"]], byz=True)
-                if method == "fedavg" and beta == 0.2 and result_key == "label_flipping":
-                    if run["history"]:
-                        store_convergence(results, "fedavg", [run["history"]], byz=True)
+                t = torch.tensor(seed_accs, dtype=torch.float)
+                acc_mean = round(float(t.mean()), 2)
+                acc_std  = round(float(t.std(correction=0)) if len(seed_accs) > 1 else 0.0, 2)
+                val = {"acc": acc_mean, "std": acc_std,
+                       "n_seeds": len(seeds), "raw": seed_accs}
+                results["byzantine_robustness"][result_key][label][f"beta_{beta}"] = val
+                print(f"    acc={acc_mean:.2f}±{acc_std:.2f}")
+
+                # Attacked convergence for figure 5 — average across seeds
+                if track and histories:
+                    store_convergence(results, method, histories, byz=True)
 
     # Also run krum and fltrust convergence for clean
     for method in ("krum", "fltrust"):
@@ -524,43 +549,47 @@ def main(args):
                 store_convergence(results, method, [run["history"]], byz=False)
 
     # -----------------------------------------------------------------
-    # 3. Adversarial robustness  (edge dataset, evaluate trained model)
+    # 3. Adversarial robustness  (edge dataset, evaluate trained model — multi-seed)
     # -----------------------------------------------------------------
     print("\n=== Adversarial Robustness (Edge-IIoTset) ===")
     eps_vals = [0.0, 0.05, 0.1, 0.15, 0.2]
     adv_rounds = max(10, args.rounds // 2)
-
-    # Train one model per method (once), then evaluate at all ε
-    trained_models = {}
     X, y, n_cls, _ = datasets["edge"]
-    n_tr = int(0.8 * X.shape[0])
-    idx = torch.randperm(X.shape[0], generator=torch.Generator().manual_seed(42))
-    Xtr, Xte = X[idx[:n_tr]], X[idx[n_tr:]]
-    ytr, yte = y[idx[:n_tr]], y[idx[n_tr:]]
+
+    # Train one model per (method, seed); then evaluate at every ε for each
+    # attack. Std is computed across seed-level accuracies.
+    seed_models: Dict[str, list] = {}
+    for method in ADV_METHODS:
+        label = method_label(method)
+        print(f"  Training {label} ({len(seeds)} seeds) ...", flush=True)
+        seed_models[method] = []
+        for seed in seeds:
+            r = run_experiment("edge", X, y, n_cls, method, adv_rounds,
+                               args.agents, seed=seed, device=device)
+            seed_models[method].append((r["model"], r["Xte"], r["yte"]))
 
     for method in ADV_METHODS:
         label = method_label(method)
-        print(f"  Training {label} ...", flush=True)
-        r = run_experiment("edge", X, y, n_cls, method, adv_rounds,
-                           args.agents, seed=42, device=device)
-        trained_models[method] = (r["model"], r["Xte"], r["yte"])
-
-    for method in ADV_METHODS:
-        label = method_label(method)
-        model, Xt, yt = trained_models[method]
+        per_seed_runs = seed_models[method]
         for atk_name, atk_key in [("FGSM", "fgsm"), ("PGD-7", "pgd7"), ("PGD-20", "pgd20")]:
             if label not in results["adversarial_robustness"][atk_name]:
                 results["adversarial_robustness"][atk_name][label] = {}
             for eps in eps_vals:
                 print(f"  {label} | {atk_name} | ε={eps} ...", flush=True)
-                if eps == 0.0:
-                    acc = evaluate(model, Xt, yt, n_cls, device)["accuracy"]
-                else:
-                    acc = adv_evaluate(model, Xt, yt, atk_key, eps, device)
+                accs = []
+                for model, Xt, yt in per_seed_runs:
+                    if eps == 0.0:
+                        accs.append(evaluate(model, Xt, yt, n_cls, device)["accuracy"])
+                    else:
+                        accs.append(adv_evaluate(model, Xt, yt, atk_key, eps, device))
+                t = torch.tensor(accs, dtype=torch.float)
+                acc_mean = round(float(t.mean()), 2)
+                acc_std  = round(float(t.std(correction=0)) if len(accs) > 1 else 0.0, 2)
                 results["adversarial_robustness"][atk_name][label][f"eps_{eps}"] = {
-                    "acc": round(acc, 2), "std": 0.6,
+                    "acc": acc_mean, "std": acc_std,
+                    "n_seeds": len(seeds), "raw": [round(a, 2) for a in accs],
                 }
-                print(f"    acc={acc:.2f}")
+                print(f"    acc={acc_mean:.2f}±{acc_std:.2f}")
 
     # -----------------------------------------------------------------
     # 4. Ablation study  (edge dataset)
@@ -579,24 +608,42 @@ def main(args):
 
     for config_name, method, _, _ in ablation_configs:
         print(f"  {config_name} ...", flush=True)
-        r_clean = run_experiment("edge", X, y, n_cls, method, abl_rounds,
-                                 args.agents, seed=42, device=device)
-        r_byz   = run_experiment("edge", X, y, n_cls, method, abl_rounds,
-                                 args.agents, seed=42, device=device,
-                                 byzantine_type="label_flip", byz_fraction=byz_x)
-        # Adversarial
-        m = r_clean["model"]
-        adv_acc = adv_evaluate(m, r_clean["Xte"], r_clean["yte"],
-                               "fgsm", 0.1, device)
+        clean_accs, byz_accs, adv_accs = [], [], []
+        for seed in seeds:
+            r_clean = run_experiment("edge", X, y, n_cls, method, abl_rounds,
+                                     args.agents, seed=seed, device=device)
+            r_byz   = run_experiment("edge", X, y, n_cls, method, abl_rounds,
+                                     args.agents, seed=seed, device=device,
+                                     byzantine_type="label_flip",
+                                     byz_fraction=byz_x)
+            adv_a   = adv_evaluate(r_clean["model"],
+                                   r_clean["Xte"], r_clean["yte"],
+                                   "fgsm", 0.1, device)
+            clean_accs.append(r_clean["accuracy"])
+            byz_accs.append(r_byz["accuracy"])
+            adv_accs.append(adv_a)
+
+        def _ms(xs):
+            t = torch.tensor(xs, dtype=torch.float)
+            return (round(float(t.mean()), 2),
+                    round(float(t.std(correction=0)) if len(xs) > 1 else 0.0, 2))
+
+        c_m, c_s = _ms(clean_accs)
+        b_m, b_s = _ms(byz_accs)
+        a_m, a_s = _ms(adv_accs)
         results["ablation"][config_name] = {
-            "clean":       round(r_clean["accuracy"], 2),
-            "poisoned":    round(r_byz["accuracy"], 2),
-            "adversarial": round(adv_acc, 2),
+            "clean":           c_m,    "clean_std":       c_s,
+            "poisoned":        b_m,    "poisoned_std":    b_s,
+            "adversarial":     a_m,    "adversarial_std": a_s,
+            "n_seeds":         len(seeds),
+            "raw_clean":       clean_accs,
+            "raw_poisoned":    byz_accs,
+            "raw_adversarial": adv_accs,
         }
-        print(f"    clean={r_clean['accuracy']:.2f}  poisoned={r_byz['accuracy']:.2f}  adv={adv_acc:.2f}")
+        print(f"    clean={c_m:.2f}±{c_s:.2f}  poisoned={b_m:.2f}±{b_s:.2f}  adv={a_m:.2f}±{a_s:.2f}")
 
     # -----------------------------------------------------------------
-    # 5. SOTA comparison  (edge, β=0.3)
+    # 5. SOTA comparison  (edge, β=0.3) — multi-seed, real backdoor ASR
     # -----------------------------------------------------------------
     print("\n=== SOTA Comparison (β=0.3) ===")
     sota_methods = ["fedavg", "krum", "trimmed", "fltrust", "flame", "ztafl"]
@@ -606,29 +653,92 @@ def main(args):
         label = method_label(method)
         print(f"  {label} ...", flush=True)
 
-        r_lf = run_experiment("edge", X, y, n_cls, method, byz_rounds,
-                              args.agents, seed=42, device=device,
-                              byzantine_type="label_flip",
-                              byz_fraction=0.3)
-        r_gm = run_experiment("edge", X, y, n_cls, method, byz_rounds,
-                              args.agents, seed=42, device=device,
-                              byzantine_type="gradient_manipulation",
-                              byz_fraction=0.3)
+        lf_accs, gm_accs, asr_vals = [], [], []
+        for seed in seeds:
+            r_lf = run_experiment("edge", X, y, n_cls, method, byz_rounds,
+                                  args.agents, seed=seed, device=device,
+                                  byzantine_type="label_flip",
+                                  byz_fraction=0.3)
+            r_gm = run_experiment("edge", X, y, n_cls, method, byz_rounds,
+                                  args.agents, seed=seed, device=device,
+                                  byzantine_type="gradient_manipulation",
+                                  byz_fraction=0.3)
+            r_bd = run_backdoor_experiment(
+                "edge", X, y, n_cls, method, byz_rounds,
+                args.agents, seed=seed, device=device,
+                poison_fraction=0.5, byz_fraction=0.3,
+            )
+            lf_accs.append(r_lf["accuracy"])
+            gm_accs.append(r_gm["accuracy"])
+            asr_vals.append(r_bd["asr"])
 
-        # Backdoor ASR: train model then test backdoor trigger accuracy
-        r_clean_model = run_experiment("edge", X, y, n_cls, method, byz_rounds,
-                                       args.agents, seed=42, device=device)
-        backdoor_asr = estimate_backdoor_asr(method)
+        def _mean_std(xs):
+            t = torch.tensor(xs, dtype=torch.float)
+            return (round(float(t.mean()), 2),
+                    round(float(t.std(correction=0)) if len(xs) > 1 else 0.0, 2))
+
+        lf_m, lf_s   = _mean_std(lf_accs)
+        gm_m, gm_s   = _mean_std(gm_accs)
+        asr_m, asr_s = _mean_std(asr_vals)
 
         results["sota_comparison"][label] = {
-            "label_flip_acc":     round(r_lf["accuracy"], 2),
-            "label_flip_std":     0.8,
-            "grad_manip_acc":     round(r_gm["accuracy"], 2),
-            "grad_manip_std":     0.7,
-            "backdoor_asr":       backdoor_asr,
-            "backdoor_asr_std":   1.5,
+            "label_flip_acc":   lf_m,
+            "label_flip_std":   lf_s,
+            "grad_manip_acc":   gm_m,
+            "grad_manip_std":   gm_s,
+            "backdoor_asr":     asr_m,
+            "backdoor_asr_std": asr_s,
+            "n_seeds":          len(seeds),
+            "raw_label_flip":   lf_accs,
+            "raw_grad_manip":   gm_accs,
+            "raw_backdoor_asr": asr_vals,
         }
-        print(f"    LF={r_lf['accuracy']:.2f}  GM={r_gm['accuracy']:.2f}  ASR={backdoor_asr:.1f}")
+        print(f"    LF={lf_m:.2f}±{lf_s:.2f}  GM={gm_m:.2f}±{gm_s:.2f}  ASR={asr_m:.2f}±{asr_s:.2f}")
+
+    # -----------------------------------------------------------------
+    # 5b. SHAP stability under Byzantine label-flipping (edge, real)
+    # -----------------------------------------------------------------
+    print("\n=== SHAP Stability Tracking (β=0.3 label-flip) ===")
+    X, y, n_cls, _ = datasets["edge"]
+    shap_rounds = max(10, args.rounds // 2)
+    per_round_records = [[] for _ in range(shap_rounds)]
+    for seed in seeds:
+        print(f"  seed={seed} ...", flush=True)
+        hist = run_shap_tracking(
+            "edge", X, y, n_cls,
+            n_rounds=shap_rounds,
+            n_agents=args.agents,
+            seed=seed,
+            device=device,
+            byz_fraction=0.3,
+            p_flip=0.5,
+        )
+        for i, h in enumerate(hist):
+            per_round_records[i].append(h)
+        last = hist[-1]
+        print(f"    final round: honest μ={last['honest_mean']:.3f}±{last['honest_std']:.3f}  "
+              f"byz μ={last['byz_mean']:.3f}±{last['byz_std']:.3f}")
+
+    shap_history = []
+    for rnd_idx, recs in enumerate(per_round_records):
+        if not recs:
+            continue
+        h_means = [r["honest_mean"] for r in recs]
+        b_means = [r["byz_mean"]    for r in recs]
+        shap_history.append({
+            "round":          rnd_idx + 1,
+            "honest_mean":    round(float(np.mean(h_means)), 4),
+            "honest_std":     round(float(np.std(h_means)) if len(h_means) > 1 else 0.0, 4),
+            "byz_mean":       round(float(np.mean(b_means)), 4),
+            "byz_std":        round(float(np.std(b_means)) if len(b_means) > 1 else 0.0, 4),
+            "n_seeds":        len(recs),
+        })
+    results["shap_stability"] = {
+        "byz_fraction":  0.3,
+        "p_flip":        0.5,
+        "n_explain":     30,
+        "history":       shap_history,
+    }
 
     # -----------------------------------------------------------------
     # 6. Scalability (edge, fedavg vs ztafl, vary n_agents)
@@ -689,19 +799,205 @@ def method_label(method: str) -> str:
     return MAP.get(method, method)
 
 
-def estimate_backdoor_asr(method: str) -> float:
-    """Estimate backdoor attack success rate based on method's known behaviour."""
-    ASR_BASE = {
-        "fedavg":  80.0,
-        "krum":    42.0,
-        "trimmed": 36.0,
-        "fltrust": 14.0,
-        "flame":   11.0,
-        "ztafl":   7.5,
+def run_backdoor_experiment(
+    ds_key: str,
+    X: torch.Tensor,
+    y: torch.Tensor,
+    n_classes: int,
+    method: str,
+    n_rounds: int,
+    n_agents: int,
+    seed: int,
+    device: str,
+    poison_fraction: float = 0.5,
+    byz_fraction: float = 0.3,
+) -> Dict[str, float]:
+    """
+    Train an FL model with BadNet-style backdoor poisoning by Byzantine clients,
+    then empirically measure the Attack Success Rate on the clean test set with
+    the trigger applied.
+
+    Returns a dict with ``asr`` (percent) and ``clean_acc`` (percent).
+    """
+    torch.manual_seed(seed)
+    n_total = X.shape[0]
+    n_train = int(0.8 * n_total)
+    idx = torch.randperm(n_total, generator=torch.Generator().manual_seed(seed))
+    Xtr, Xte = X[idx[:n_train]], X[idx[n_train:]]
+    ytr, yte = y[idx[:n_train]], y[idx[n_train:]]
+
+    partitions = non_iid_partition(Xtr, ytr, n_agents=n_agents, seed=seed)
+
+    # Poison Byzantine clients' partitions before training begins
+    n_byz = int(byz_fraction * n_agents)
+    for i in range(n_byz):
+        Xi, yi = partitions[i]
+        Xi_p, yi_p = poison_partition(
+            Xi, yi,
+            poison_fraction=poison_fraction,
+            seed=seed * 100 + i,
+        )
+        partitions[i] = (Xi_p, yi_p)
+
+    loaders = make_loaders(partitions)
+
+    n_srv = min(200, n_train // 10)
+    srv_ds = TensorDataset(Xtr[:n_srv], ytr[:n_srv])
+    srv_bs = max(16, min(BATCH_SIZE, n_srv // 2))
+    srv_loader = DataLoader(srv_ds, batch_size=srv_bs, shuffle=True,
+                            drop_last=(n_srv > srv_bs * 2))
+
+    tpm_devices, authority = None, None
+    if method == "ztafl":
+        aik_reg = {f"a{i}": f"k{i}" for i in range(n_agents)}
+        tpm_devices = [TPMDevice(f"a{i}", f"k{i}") for i in range(n_agents)]
+        authority   = AttestationAuthority(aik_registry=aik_reg, max_age_seconds=300)
+
+    global_m = CNNLSTMClassifier(n_features=N_FEATURES, n_classes=n_classes)
+
+    for _ in range(1, n_rounds + 1):
+        global_m = run_one_fl_round(
+            global_m, partitions, loaders, method, n_agents, n_classes, device,
+            byzantine_type="none",   # poisoning lives in the data, no runtime attack
+            byz_fraction=0.0,
+            server_loader=srv_loader,
+            tpm_devices=tpm_devices, authority=authority,
+        )
+
+    asr = compute_backdoor_asr(global_m, Xte, yte, device=device)
+    clean = evaluate(global_m, Xte, yte, n_classes, device)
+    return {
+        "asr":       round(asr, 2),
+        "clean_acc": round(clean["accuracy"], 2),
     }
-    base = ASR_BASE.get(method, 50.0)
-    noise = (torch.rand(1).item() - 0.5) * 4.0
-    return round(max(5.0, min(95.0, base + noise)), 1)
+
+
+def run_shap_tracking(
+    ds_key: str,
+    X: torch.Tensor,
+    y: torch.Tensor,
+    n_classes: int,
+    n_rounds: int,
+    n_agents: int,
+    seed: int,
+    device: str,
+    byz_fraction: float = 0.3,
+    p_flip: float = 0.5,
+    n_explain: int = 30,
+) -> List[Dict[str, float]]:
+    """
+    Run an FL experiment with label-flipping Byzantine clients, recording the
+    SHAP stability score of every local model against the current global model
+    at every round.  Returns a list of per-round dicts containing the mean and
+    std of the score for the honest and Byzantine groups.
+    """
+    torch.manual_seed(seed)
+    n_total = X.shape[0]
+    n_train = int(0.8 * n_total)
+    idx = torch.randperm(n_total, generator=torch.Generator().manual_seed(seed))
+    Xtr, Xte = X[idx[:n_train]], X[idx[n_train:]]
+    ytr, yte = y[idx[:n_train]], y[idx[n_train:]]
+
+    n_val = min(n_explain, Xte.shape[0])
+    Xval = Xte[:n_val].to(device)
+    yval = yte[:n_val].to(device)
+
+    partitions = non_iid_partition(Xtr, ytr, n_agents=n_agents, seed=seed)
+    loaders    = make_loaders(partitions)
+
+    n_byz = int(byz_fraction * n_agents)
+    byz_ids = set(range(n_byz))
+
+    global_m = CNNLSTMClassifier(n_features=N_FEATURES, n_classes=n_classes)
+    history: List[Dict[str, float]] = []
+
+    for rnd in range(1, n_rounds + 1):
+        ref = copy.deepcopy(global_m).to(device)
+        local_models: List[nn.Module] = []
+        for i in range(n_agents):
+            lm = copy.deepcopy(global_m).to(device)
+            byz_type = "label_flip" if i in byz_ids else "none"
+            local_train(lm, loaders[i], n_epochs=LOCAL_EPOCHS, lr=LR,
+                        device=device, use_adv=False,
+                        byzantine_type=byz_type, n_classes=n_classes,
+                        p_flip=p_flip)
+            local_models.append(lm)
+
+        # SHAP stability of every local vs current global
+        honest_scores, byz_scores = [], []
+        for i, lm in enumerate(local_models):
+            try:
+                s = compute_shap_stability(
+                    lm, ref, Xval, yval,
+                    n_explain=n_val,
+                    n_classes=n_classes,
+                    device=device,
+                )
+            except Exception:
+                continue
+            (byz_scores if i in byz_ids else honest_scores).append(s)
+
+        history.append({
+            "round":       rnd,
+            "honest_mean": float(np.mean(honest_scores)) if honest_scores else 0.0,
+            "honest_std":  float(np.std(honest_scores))  if len(honest_scores)  > 1 else 0.0,
+            "byz_mean":    float(np.mean(byz_scores))    if byz_scores else 0.0,
+            "byz_std":     float(np.std(byz_scores))     if len(byz_scores)     > 1 else 0.0,
+            "n_honest":    len(honest_scores),
+            "n_byz":       len(byz_scores),
+        })
+
+        # FedAvg aggregation for the next round (we're tracking the metric, not
+        # the defence — using the simplest aggregator here keeps the signal clean)
+        sizes = [int(partitions[i][0].shape[0]) for i in range(n_agents)]
+        weights = [s / sum(sizes) for s in sizes]
+        global_m = federated_averaging(local_models, weights=weights)
+
+    return history
+
+
+def _read_git_commit() -> str:
+    """Best-effort read of HEAD commit SHA so the JSON output is unambiguously
+    tied to a specific code revision."""
+    try:
+        head_path = os.path.join(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))), ".git", "HEAD")
+        with open(head_path) as f:
+            head = f.read().strip()
+        if head.startswith("ref: "):
+            ref = head[5:]
+            ref_path = os.path.join(os.path.dirname(head_path), ref)
+            with open(ref_path) as f:
+                return f.read().strip()
+        return head
+    except Exception:
+        return "unknown"
+
+
+def compute_data_fingerprint(path: str, X: torch.Tensor, y: torch.Tensor) -> Dict[str, Any]:
+    """
+    Compute a deterministic fingerprint of a loaded dataset so that any
+    downstream JSON output can be tied unambiguously to the input CSV that
+    produced it.
+
+    Includes the SHA256 of the source CSV file, sample / feature counts, the
+    class distribution, and L2 norms of the per-feature mean/std vectors.
+    """
+    sha = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha.update(chunk)
+
+    return {
+        "csv_path":           path,
+        "csv_sha256":         sha.hexdigest(),
+        "csv_size_bytes":     os.path.getsize(path),
+        "n_samples":          int(X.shape[0]),
+        "n_features":         int(X.shape[1]),
+        "class_distribution": torch.bincount(y).tolist(),
+        "feature_mean_l2":    round(float(X.float().mean(dim=0).norm().item()), 4),
+        "feature_std_l2":     round(float(X.float().std(dim=0).norm().item()), 4),
+    }
 
 
 def store_convergence(results: Dict, method: str, history_runs: List, byz: bool):

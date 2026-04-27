@@ -463,49 +463,64 @@ def figure_convergence(data, outdir, fmt):
 # ---------------------------------------------------------------------------
 
 def figure_shap_stability(data, outdir, fmt):
-    rng = np.random.default_rng(42)
-    rounds = np.arange(1, 101)
+    """
+    Plot empirically measured SHAP integrated-gradient stability scores per
+    round, separated by client population (honest vs Byzantine label-flippers).
 
-    # Honest agents: stability increases from ~0.72 to ~0.89, mean ~0.89
-    honest_mean = 0.72 + (0.89 - 0.72) * (1 - np.exp(-rounds / 30))
-    honest_std  = 0.04 * np.exp(-rounds / 60) + 0.015
-    # Byzantine agents: oscillate around 0.42
-    byz_mean = 0.42 + 0.03 * np.sin(rounds / 8)
-    byz_std  = 0.05
+    The data is produced by ``run_shap_tracking`` in ``scripts/run_experiments.py``
+    and stored in ``results['shap_stability']['history']``.  This function does
+    no synthesis, it strictly reads the recorded values.
+    """
+    if "shap_stability" not in data or not data["shap_stability"].get("history"):
+        print("[figure6] no shap_stability history in results; skipping")
+        return
+
+    hist = data["shap_stability"]["history"]
+    rounds      = np.array([h["round"]       for h in hist])
+    honest_mean = np.array([h["honest_mean"] for h in hist])
+    honest_std  = np.array([h["honest_std"]  for h in hist])
+    byz_mean    = np.array([h["byz_mean"]    for h in hist])
+    byz_std     = np.array([h["byz_std"]     for h in hist])
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
 
-    ax.plot(rounds, honest_mean, "-", color="#2E86C1", linewidth=2.3, label="Honest agents (mean)")
+    ax.plot(rounds, honest_mean, "-", color="#2E86C1", linewidth=2.3,
+            label="Honest agents (mean)")
     ax.fill_between(rounds, honest_mean - honest_std, honest_mean + honest_std,
                     alpha=0.18, color="#2E86C1", label="Honest agents (±1σ)")
 
-    ax.plot(rounds, byz_mean, "--", color="#E74C3C", linewidth=2.3, label="Byzantine agents (mean)")
+    ax.plot(rounds, byz_mean, "--", color="#E74C3C", linewidth=2.3,
+            label="Byzantine agents (mean)")
     ax.fill_between(rounds, byz_mean - byz_std, byz_mean + byz_std,
                     alpha=0.15, color="#E74C3C", label="Byzantine agents (±1σ)")
 
-    # 2σ separation threshold
+    # 2σ separation threshold (honest mean − 2·std)
     threshold_line = honest_mean - 2 * honest_std
     ax.plot(rounds, threshold_line, ":", color="#27AE60", linewidth=1.8,
             label="2σ detection threshold")
 
-    # Annotate means at round 100
-    ax.annotate(f"μ = {honest_mean[-1]:.2f}",
-                xy=(100, honest_mean[-1]), xytext=(80, honest_mean[-1] + 0.03),
-                fontsize=8, color="#2E86C1",
-                arrowprops=dict(arrowstyle="->", color="#2E86C1", lw=1.0))
-    ax.annotate(f"μ = {byz_mean[-1]:.2f}",
-                xy=(100, byz_mean[-1]),  xytext=(78, byz_mean[-1] - 0.06),
-                fontsize=8, color="#E74C3C",
-                arrowprops=dict(arrowstyle="->", color="#E74C3C", lw=1.0))
+    if len(rounds) > 0:
+        ax.annotate(f"μ = {honest_mean[-1]:.2f}",
+                    xy=(rounds[-1], honest_mean[-1]),
+                    xytext=(rounds[-1] - 5, honest_mean[-1] + 0.03 * abs(honest_mean[-1])),
+                    fontsize=8, color="#2E86C1",
+                    arrowprops=dict(arrowstyle="->", color="#2E86C1", lw=1.0))
+        ax.annotate(f"μ = {byz_mean[-1]:.2f}",
+                    xy=(rounds[-1], byz_mean[-1]),
+                    xytext=(rounds[-1] - 5, byz_mean[-1] - 0.06 * abs(byz_mean[-1] + 0.01)),
+                    fontsize=8, color="#E74C3C",
+                    arrowprops=dict(arrowstyle="->", color="#E74C3C", lw=1.0))
 
+    n_seeds = data["shap_stability"]["history"][0].get("n_seeds", 1)
     _ax_style(ax,
-              title="SHAP Stability Scores: Honest vs. Byzantine Agents",
+              title=f"SHAP Stability Scores: Honest vs. Byzantine Agents "
+                    f"(n={n_seeds} seeds, β=0.3)",
               xlabel="Training Round",
-              ylabel="SHAP Stability Score")
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0.25, 1.02)
-    ax.legend(fontsize=8.5, loc="lower right", framealpha=0.92)
-    fig.suptitle("Figure 6 — SHAP Stability Score Distribution", fontsize=11, fontweight="bold", y=1.01)
+              ylabel="SHAP Stability (Integrated-Gradient L2 Distance)")
+    ax.set_xlim(rounds.min(), rounds.max())
+    ax.legend(fontsize=8.5, loc="best", framealpha=0.92)
+    fig.suptitle("Figure 6 — SHAP Stability Score Distribution",
+                 fontsize=11, fontweight="bold", y=1.01)
     fig.tight_layout()
     _save(fig, os.path.join(outdir, "figures", "figure6_shap_stability"), fmt)
 
