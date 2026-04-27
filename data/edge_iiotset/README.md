@@ -50,8 +50,9 @@ downloaded separately from the source below.
 
 The full Edge-IIoTset corpus is hosted on IEEE DataPort:
 
-- **Landing page**: [IEEE DataPort — Edge-IIoTset](https://ieee-dataport.org/documents/edge-iiotset-new-comprehensive-realistic-cyber-security-dataset-iot-and-iiot)
-- **Mirror (Kaggle)**: [Edge-IIoTset on Kaggle](https://www.kaggle.com/datasets/mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot)
+- **Landing page**: [IEEE DataPort — Edge-IIoTset](https://ieee-dataport.org/documents/edge-iiotset-new-comprehensive-realistic-cyber-security-dataset-iot-and-iiot-applications)
+- **Mirror (Kaggle, no login)**: [Edge-IIoTset on Kaggle](https://www.kaggle.com/datasets/mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot)
+- **Companion paper (DOI 10.1109/ACCESS.2022.3165809)**: [IEEE Access](https://ieeexplore.ieee.org/document/9751703/)
 
 After download, place the CSV at `raw/network_traffic_samples.csv` (or
 update the path passed to `load_edge_iiotset(...)`).  The loader in

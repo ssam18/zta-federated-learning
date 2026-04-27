@@ -48,7 +48,9 @@ The dataset is distributed by the University of New South Wales Canberra
 Cyber group:
 
 - **Landing page**: [UNSW-NB15 (UNSW Canberra)](https://research.unsw.edu.au/projects/unsw-nb15-dataset)
-- **Direct file archive**: [UNSW-NB15 file index](https://cloudstor.aarnet.edu.au/plus/s/2DhnLGDdEECo4ys)
+- **Official file archive (replaces retired CloudStor)**: [UNSW SharePoint folder](https://unsw-my.sharepoint.com/:f:/g/personal/z5025758_ad_unsw_edu_au/EnuQZZn3XuNBjgfcUu4DIVMBLCHyoLHqOswirpOQifr1ag) — pcap, BRO, Argus, and CSV variants
+- **IEEE DataPort (subscription required)**: [UNSW-NB15 train/test CSVs](https://ieee-dataport.org/documents/unswnb15-dataset)
+- **Direct CSV (UQ NetFlow variant, no login)**: [NF-UNSW-NB15-v2 (43-feature CSV)](https://rdm.uq.edu.au/files/8c6e2a00-ef9c-11ed-827d-e762de186848)
 
 After download, place the combined feature CSV at
 `raw/intrusion_records.csv` (or update the path passed to
