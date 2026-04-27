@@ -37,6 +37,24 @@ executed by security researchers on an isolated testbed network.
 | `raw/intrusion_records.csv` | Raw connection records with 49 network features |
 | `processed/` | Normalised features and integer-encoded labels for training |
 
+The CSV in this directory is a small public sample used for unit-testing
+and quick reproduction.  The full UNSW-NB15 corpus (~100 GB pcap +
+~2.5 million labelled flows) must be downloaded separately from the source
+below.
+
+## Download (Full Dataset)
+
+The dataset is distributed by the University of New South Wales Canberra
+Cyber group:
+
+- **Landing page**: [UNSW-NB15 (UNSW Canberra)](https://research.unsw.edu.au/projects/unsw-nb15-dataset)
+- **Direct file archive**: [UNSW-NB15 file index](https://cloudstor.aarnet.edu.au/plus/s/2DhnLGDdEECo4ys)
+
+After download, place the combined feature CSV at
+`raw/intrusion_records.csv` (or update the path passed to
+`load_unsw_nb15(...)`).  The loader in `src/utils/data_loader.py` documents
+the expected column layout.
+
 ## Feature Set
 
 The 49 features span network-layer statistics and connection-level attributes:

@@ -42,6 +42,21 @@ communication protocols in a realistic deployment environment.
 | `raw/network_traffic_samples.csv` | Packet-level feature vectors extracted from pcap captures |
 | `processed/` | Normalised, label-encoded versions ready for model training |
 
+The CSV in this directory is a small public sample used for unit-testing and
+quick reproduction.  The full dataset (~14 GB of pcap and CSV) must be
+downloaded separately from the source below.
+
+## Download (Full Dataset)
+
+The full Edge-IIoTset corpus is hosted on IEEE DataPort:
+
+- **Landing page**: [IEEE DataPort — Edge-IIoTset](https://ieee-dataport.org/documents/edge-iiotset-new-comprehensive-realistic-cyber-security-dataset-iot-and-iiot)
+- **Mirror (Kaggle)**: [Edge-IIoTset on Kaggle](https://www.kaggle.com/datasets/mohamedamineferrag/edgeiiotset-cyber-security-dataset-of-iot-iiot)
+
+After download, place the CSV at `raw/network_traffic_samples.csv` (or
+update the path passed to `load_edge_iiotset(...)`).  The loader in
+`src/utils/data_loader.py` documents the expected column layout.
+
 ## Feature Extraction
 
 Features were extracted using tshark with a custom dissector profile. Each row represents one

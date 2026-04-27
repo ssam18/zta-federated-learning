@@ -34,6 +34,23 @@ controlled network segment hosting web servers, file servers, and end-user works
 | `raw/network_flows.csv` | Bidirectional flow records with 78 features per flow |
 | `processed/` | Preprocessed versions with normalised features and encoded labels |
 
+The CSV in this directory is a small public sample used for unit-testing and
+quick reproduction.  The full CIC-IDS2017 corpus (~50 GB of pcap +
+flow-CSV) must be downloaded separately from the source below.
+
+## Download (Full Dataset)
+
+The dataset is distributed by the Canadian Institute for Cybersecurity
+(University of New Brunswick):
+
+- **Landing page**: [CIC-IDS2017 (UNB)](https://www.unb.ca/cic/datasets/ids-2017.html)
+- **Direct file index**: [CIC FTP archive](http://cicresearch.ca/CICDataset/CIC-IDS-2017/)
+
+A registration form is required for download.  After extraction, place the
+combined flow CSV at `raw/network_flows.csv` (or update the path passed to
+`load_cic_ids2017(...)`).  The loader in `src/utils/data_loader.py`
+documents the expected column layout.
+
 ## Feature Set
 
 Each row represents one bidirectional network flow. The 78 features cover:
