@@ -296,7 +296,7 @@ If you use this code or data in your research, please cite:
 ```bibtex
 @article{singh2025ztafl,
   title   = {Zero-Trust Agentic Federated Learning for Secure {IIoT} Defense Systems},
-  author  = {Singh, Samaresh Kumar and Roy, Joyjit and So, Martin},
+  author  = {Singh, Samaresh Kumar and Roy, Joyjit Roy and So, Martin},
   journal = {arXiv preprint arXiv:2512.23809},
   year    = {2025},
   url     = {https://arxiv.org/abs/2512.23809},
