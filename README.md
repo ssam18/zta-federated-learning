@@ -291,7 +291,7 @@ Figures and tables are generated in `results/figures/` after Step 2.
 
 ## Citation
 
-If you use this code or data in your research, please cite:
+If you use this code or data in your research, please cite, if this paper helps.
 
 ```bibtex
 @article{singh2025ztafl,
