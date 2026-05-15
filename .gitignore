@@ -19,6 +19,7 @@ env/
 results/figures/
 results/tables/
 results/run_log.txt
+results/test_fixtures/
 
 # Claude Code session files
 .claude/

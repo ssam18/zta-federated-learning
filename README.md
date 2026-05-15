@@ -96,6 +96,24 @@ flowchart TB
 | **SHAP Aggregation** | RBF-kernel stability scores down-weight divergent client updates |
 | **Adversarial Training** | On-device FGSM/PGD augmentation (70 % clean / 30 % adversarial per batch) |
 | **Byzantine Defence** | FLTrust cosine-similarity filtering; FLAME norm-clipping + outlier rejection |
+| **Agentic Layer** | TrustDB (paper §V.A) + 5-module Edge Agent (§IV) + Fog pipeline (§V.B): attestation → SHAP filter at μ−2σ → weighted FedAvg → rollback |
+
+### Agentic Architecture (paper §IV–V)
+
+The framework implements every clause of the paper's "agentic" specification.
+Each Edge Agent is a 5-module IIoT device, each Fog Agent runs the
+attestation→SHAP-filter→weighted-aggregation→rollback pipeline, and the
+TrustDB tracks per-agent trust scores `τ ∈ [0,1]` with the paper's exact
+update rules. Live in [src/agentic/](src/agentic/):
+
+| File | Paper section | Responsibility |
+|------|--------------|----------------|
+| [trust_db.py](src/agentic/trust_db.py) | §V.A | `τ ← min(1, τ+0.02)` on positive round; `τ ← τ × 0.5` on penalty; quarantine when `τ < 0.6`; **5 consecutive clean attestations** before rejoining |
+| [edge_agent.py](src/agentic/edge_agent.py) | §IV | 5 named modules: `perception`, `local_ids`, `adv_training`, `attestation`, `secure_comm` |
+| [fog_agent.py](src/agentic/fog_agent.py) | §V.B | Verify TPM tokens → compute `s_i = 1 − ‖φ_i − φ_ref‖₂ / (‖φ_ref‖₂+ε)` → filter `s_i < μ_s − 2σ_s` → aggregate with `w_i ∝ s_i · acc_i · √|D_i|` → rollback if `acc < 0.8 × acc_prev` |
+| [config.py](src/agentic/config.py) | §V config | Single source of truth for every paper constant (`τ_min`, `Δt_max`, etc.) |
+| [observability.py](src/agentic/observability.py) | n/a | Structured logger + JSONL audit trail + JSONL metrics stream for production observability |
+| [policies.py](src/agentic/policies.py) | n/a (extension) | Pluggable decision interface: `ThresholdPolicy` (paper-equivalent), `LearnedPolicy`, `LLMPolicy` — for research follow-up beyond the paper |
 
 ---
 
@@ -114,7 +132,16 @@ zta-federated-learning/
 │   │   └── aggregation.py     # FedAvg, FedProx, Krum, Trimmed Mean, FLTrust, FLAME, SHAP-weighted
 │   ├── security/
 │   │   ├── attestation.py     # TPM device attestation & trust management
-│   │   └── adversarial.py     # FGSM / PGD attack generation, adversarial training, robustness eval
+│   │   ├── adversarial.py     # FGSM / PGD attack generation, adversarial training, robustness eval
+│   │   └── backdoor.py        # BadNet trigger pattern + ASR computation
+│   ├── agentic/               # Agentic decision layer (paper §IV-V)
+│   │   ├── trust_db.py        # TrustDB with paper-exact tau update rules
+│   │   ├── edge_agent.py      # 5-module Edge Agent (perception/IDS/adv/attest/comm)
+│   │   ├── fog_agent.py       # Fog: attestation -> SHAP filter -> weighted FedAvg -> rollback
+│   │   ├── config.py          # AgenticConfig (single source of truth for all params)
+│   │   ├── observability.py   # Structured logging + JSONL audit + metrics
+│   │   ├── signals.py         # Per-client signal extraction (extension)
+│   │   └── policies.py        # Pluggable Threshold/Learned/LLM policies (extension)
 │   └── utils/
 │       ├── data_loader.py     # Dataset loaders, non-IID partitioning, preprocessing
 │       └── metrics.py         # Accuracy, macro-F1, SHAP stability score
@@ -124,14 +151,18 @@ zta-federated-learning/
 │   ├── adversarial_eval.py    # Robustness at ε ∈ {0.05, 0.1, 0.15, 0.2}
 │   └── ablation_study.py      # Component contribution analysis
 ├── scripts/
-│   ├── run_experiments.py     # Main experiment runner (all results in one pass)
-│   ├── generate_figures.py    # Publication figures & tables from experiment_results.json
-│   └── analyze_results.py     # Summary statistics and quick CSV export
+│   ├── run_experiments.py        # Main experiment runner (all results in one pass)
+│   ├── run_agentic_experiment.py # Agentic ZTA-FL pipeline runner (paper §IV-V)
+│   ├── generate_figures.py       # Publication figures & tables from experiment_results.json
+│   ├── verify_pipeline.py        # SHA256 + per-seed array verification
+│   └── analyze_results.py        # Summary statistics and quick CSV export
 ├── notebooks/
 │   └── federated_ids_analysis.ipynb  # End-to-end walkthrough notebook
 ├── tests/
-│   ├── test_federation.py     # Unit tests — aggregation & partitioning
-│   └── test_security.py       # Unit tests — attestation & trust management
+│   ├── test_federation.py        # Unit tests — aggregation & partitioning
+│   ├── test_security.py          # Unit tests — attestation & trust management
+│   ├── test_agentic.py           # Property tests for the agentic layer (19 tests)
+│   └── test_pipeline_integrity.py# Verifies metrics are computed not hardcoded
 └── results/
     ├── experiment_results.json # Structured results (auto-generated)
     └── figures/               # All generated plots (auto-generated)
@@ -225,6 +256,37 @@ python3 experiments/adversarial_eval.py --dataset edge --rounds 20 --agents 10
 # Ablation study (component contributions)
 python3 experiments/ablation_study.py --dataset edge --rounds 30 --agents 10
 ```
+
+### Step 3b - (Optional) Run the agentic ZTA-FL pipeline
+
+The full agentic stack (paper §IV-V) runs as a separate experiment with its own
+runner. This is the script that exercises the TrustDB, the 5-module Edge Agent,
+and the Fog Agent's four-step pipeline against a Byzantine-poisoned client
+population:
+
+```bash
+# Smoke test (5 agents, 6 rounds, ~3 min on RTX 4060)
+python3 scripts/run_agentic_experiment.py --quick --gpu
+
+# Moderate scale (10 agents, 20 rounds, 2 seeds, β=0.3 Byzantine, ~40 min)
+python3 scripts/run_agentic_experiment.py \
+    --rounds 20 --agents 10 --seeds 2 --byz-fraction 0.3 --gpu
+
+# Paper scale (100 agents, 100 rounds, 5 seeds; needs full Edge-IIoTset)
+python3 scripts/run_agentic_experiment.py --paper-scale --gpu
+```
+
+Three artefacts are produced:
+
+| File | Purpose |
+|------|---------|
+| `results/agentic_results.json` | Per-config metrics + TrustDB status counts + Byzantine catch rate |
+| `results/agentic_audit.jsonl` | Append-only TrustDB event log (every τ update, every state transition) |
+| `results/agentic_metrics.jsonl` | Per-round operational telemetry (round timings, SHAP filter μ/σ, weights, rollback flags) |
+
+All three are streamed in real time and reproducible. Every event references a
+specific paper section in its log line so an external auditor can replay the
+decision trail offline.
 
 ### Step 4 - (Optional) Interactive notebook
 

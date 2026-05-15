@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "timestamp": "2026-05-05 18:13",
+    "device": "cuda",
+    "config": {
+      "trust_db": {
+        "tau_init": 0.7,
+        "tau_rejoin": 0.65,
+        "tau_min": 0.6,
+        "tau_reward": 0.02,
+        "tau_penalty": 0.5,
+        "rejoin_attests": 5
+      },
+      "attestation": {
+        "delta_t_max_s": 600.0,
+        "require_pcr": true
+      },
+      "shap": {
+        "n_background": 30,
+        "sigma_threshold": 3.0,
+        "rollback_ratio": 0.5,
+        "epsilon": 1e-06
+      },
+      "adv_training": {
+        "clean_fraction": 0.7,
+        "fgsm_alpha": 0.01,
+        "pgd_iters": 7,
+        "pgd_eps": 0.1
+      },
+      "federation": {
+        "n_agents": 20,
+        "n_fog_nodes": 10,
+        "n_rounds": 30,
+        "local_epochs": 5,
+        "batch_size": 128,
+        "learning_rate": 0.001,
+        "seeds": [
+          42,
+          123,
+          456,
+          789,
+          1011
+        ],
+        "n_classes_per_agent": 3
+      },
+      "observability": {
+        "log_level": "INFO",
+        "audit_path": "results/agentic_audit.jsonl",
+        "metrics_path": "results/agentic_metrics.jsonl",
+        "log_format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+      },
+      "preset": "small-scale"
+    },
+    "byz_fraction": 0.3,
+    "seeds": [
+      0,
+      1
+    ]
+  },
+  "vanilla": {
+    "per_seed": [
+      {
+        "accuracy": 73.35000000000001,
+        "macro_f1": 38.78047058363777,
+        "seed": 0
+      },
+      {
+        "accuracy": 70.35,
+        "macro_f1": 40.62692512373947,
+        "seed": 1
+      }
+    ],
+    "mean": {
+      "accuracy": 71.85,
+      "macro_f1": 39.7
+    },
+    "std": {
+      "accuracy": 1.5,
+      "macro_f1": 0.92
+    }
+  },
+  "ztafl": {
+    "per_seed": [
+      {
+        "accuracy": 61.650000000000006,
+        "macro_f1": 7.629950495049506,
+        "trust_db_status_counts": {
+          "UNKNOWN": 0,
+          "ACTIVE": 20,
+          "QUARANTINED": 0
+        },
+        "byzantine_caught": 0,
+        "byzantine_total": 6,
+        "seed": 0
+      },
+      {
+        "accuracy": 67.4,
+        "macro_f1": 25.037981448257433,
+        "trust_db_status_counts": {
+          "UNKNOWN": 0,
+          "ACTIVE": 20,
+          "QUARANTINED": 0
+        },
+        "byzantine_caught": 0,
+        "byzantine_total": 6,
+        "seed": 1
+      }
+    ],
+    "mean": {
+      "accuracy": 64.53,
+      "macro_f1": 16.33
+    },
+    "std": {
+      "accuracy": 2.88,
+      "macro_f1": 8.7
+    }
+  }
+}
