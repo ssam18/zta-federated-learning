@@ -376,7 +376,6 @@ Figures and tables are generated in `results/figures/` after Step 2.
   url       = {https://ieeexplore.ieee.org/document/11542411}
 }
 ```
----
 
 ## License
 
