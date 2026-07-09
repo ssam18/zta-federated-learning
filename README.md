@@ -375,7 +375,7 @@ Figures and tables are generated in `results/figures/` after Step 2.
   doi       = {10.1109/SATC69565.2026.11542411},
   url       = {https://ieeexplore.ieee.org/document/11542411}
 }
-
+---
 ---
 
 ## License
