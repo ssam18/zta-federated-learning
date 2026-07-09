@@ -342,11 +342,23 @@ Figures and tables are generated in `results/figures/` after Step 2.
 
 ---
 
+## Publication
+
+> **Zero-Trust Agentic Federated Learning for Secure Internet of Things (IoT) Defense Systems**  
+> Samaresh Kumar Singh, Joyjit Roy, Martin So  
+> *2026 IEEE 2nd International Conference on Secure IoT, Assured and Trusted Computing (SATC)*, 2026  
+>  
+> **IEEE Xplore:**  
+> [https://ieeexplore.ieee.org/document/11542411](https://ieeexplore.ieee.org/document/11542411)  
+>  
+> **DOI:**  
+> [https://doi.org/10.1109/SATC69565.2026.11542411](https://doi.org/10.1109/SATC69565.2026.11542411)
+
 ## Preprint
 
-> **Zero-Trust Agentic Federated Learning for Secure IIoT Defense Systems**
-> Samaresh Kumar Singh, Joyjit Roy, Martin So
-> arXiv preprint arXiv:2512.23809, 2025
+> **Zero-Trust Agentic Federated Learning for Secure IIoT Defense Systems**  
+> Samaresh Kumar Singh, Joyjit Roy, Martin So  
+> arXiv preprint arXiv:2512.23809, 2025  
 > [https://arxiv.org/abs/2512.23809](https://arxiv.org/abs/2512.23809)
 
 ---
