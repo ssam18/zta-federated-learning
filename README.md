@@ -365,17 +365,16 @@ Figures and tables are generated in `results/figures/` after Step 2.
 
 ## Citation
 
-If you use this code or data in your research, please cite, if this paper helps.
-
 ```bibtex
-@article{singh2025ztafl,
-  title   = {Zero-Trust Agentic Federated Learning for Secure {IIoT} Defense Systems},
-  author  = {Singh, Samaresh Kumar and Roy, Joyjit Roy and So, Martin},
-  journal = {arXiv preprint arXiv:2512.23809},
-  year    = {2025},
-  url     = {https://arxiv.org/abs/2512.23809},
+@inproceedings{singh2026ztafl,
+  author    = {Singh, Samaresh Kumar and Roy, Joyjit and So, Martin},
+  title     = {Zero-Trust Agentic Federated Learning for Secure Internet of Things (IoT) Defense Systems},
+  booktitle = {2026 IEEE 2nd International Conference on Secure IoT, Assured and Trusted Computing (SATC)},
+  year      = {2026},
+  pages     = {1--10},
+  doi       = {10.1109/SATC69565.2026.11542411},
+  url       = {https://ieeexplore.ieee.org/document/11542411}
 }
-```
 
 ---
 
